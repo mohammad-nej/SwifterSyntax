@@ -4,18 +4,29 @@
 import PackageDescription
 
 let package = Package(
+    
     name: "SwifterSyntax",
+    platforms: [.macOS(.v14), .iOS(.v17)]
+    ,
     products: [
         // Products define the executables and libraries a package produces, making them visible to other packages.
         .library(
             name: "SwifterSyntax",
             targets: ["SwifterSyntax"]),
+    
     ],
+    dependencies: [.package(url: "https://github.com/swiftlang/swift-syntax", .upToNextMajor(from: "601.0.1"))],
     targets: [
         // Targets are the basic building blocks of a package, defining a module or a test suite.
         // Targets can depend on other targets in this package and products from dependencies.
         .target(
-            name: "SwifterSyntax"),
+            name: "SwifterSyntax"
+            ,dependencies: [
+                .product(name: "SwiftSyntax", package: "swift-syntax"),
+                .product(name: "SwiftParser", package: "swift-syntax"),
+                .product(name: "SwiftSyntaxBuilder", package: "swift-syntax")
+                           ]
+        ),
         .testTarget(
             name: "SwifterSyntaxTests",
             dependencies: ["SwifterSyntax"]
