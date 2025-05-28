@@ -5,6 +5,7 @@
 //  Created by MohammavDev on 5/21/25.
 //
 
+///Builder for creating a SwiftUI @State private var for you
 public struct StateVariableBuilder : FeildBuildable{
         
     var name : String

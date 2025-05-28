@@ -8,6 +8,9 @@
 import Foundation
 import SwiftSyntax
 
+///Holds information about Types found in your code base.
+///
+///You can create a new type for yourself using provided static variables e.g. ``ObjectInformation.class`` , ``ObjectInformation.struct``
 public final class ObjectInformation :SendableCreatable, Identifiable , Hashable , Equatable {
     
 
@@ -179,7 +182,7 @@ extension ObjectInformation {
     ///  arrays and optionals created from these types and much more. will return nil if inferring is failed
     /// - Parameters:
     ///   - value: your type name
-    ///   - info: if provided, it will use this info to search for types that was discovered in your source code otherwise will just create a new instance
+    ///   - info: Use this informationHandler to search for your requested type
     /// - Returns: type of your variable if found, otherwise nil
     public static func infer(from value : String, using info : InformationHandler ) -> ObjectInformation?{
       

@@ -5,6 +5,7 @@
 //  Created by MohammavDev on 5/21/25.
 //
 
+///Creates an internal computed property by default
 public struct ComputedPropertyBuilder : FeildBuildable{
     var name : String
     var type : ObjectInformation

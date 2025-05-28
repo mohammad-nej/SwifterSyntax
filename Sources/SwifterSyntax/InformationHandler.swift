@@ -6,6 +6,8 @@
 //
 import SwiftUI
 @Observable
+
+///Holds information about all Types and Variables found in your code base
 public final class InformationHandler : SendableCreatable {
     
      
@@ -20,6 +22,12 @@ public final class InformationHandler : SendableCreatable {
      ///list of all global and static variables found in the source code
      public  var topLevelVariables : [FeildType] = []
      
+    ///Indicates whether this infoHandler need a rerun or not
+    ///
+    ///Check ``SyntaxParser.rerun()`` method for more information
+     internal var needRerun : Bool = false
+    
+    ///All the types found in swift source code
      public var objects : Set<ObjectInformation> = []
     
     //List of all scopedURLs of directories got from the user, this should be release later on when we are done with it.

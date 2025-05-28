@@ -10,6 +10,7 @@ import SwiftSyntax
 import SwiftParser
 import Foundation
 
+///Extract information of global variables found in the code base
 class TopLevelVariablesVisitor : SyntaxVisitor{
     var variables : [FeildType] = []
     let info : InformationHandler

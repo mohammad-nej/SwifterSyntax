@@ -7,10 +7,12 @@
 
 import Foundation
 
+///Holds information about your variables, including their name , type , mutationType(var/let) , initialValue , ...
+///
 public final class FeildType :  SendableCreatable, Identifiable ,CodeGeneratable , Hashable , Equatable {
    
 
-    
+    /// id used for Hashable , Equatable
     public let id : UUID = UUID()
     
     ///Name of the variable

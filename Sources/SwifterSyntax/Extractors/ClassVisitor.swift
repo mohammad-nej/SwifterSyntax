@@ -10,6 +10,7 @@ import SwiftSyntax
 import SwiftParser
 import Foundation
 
+///Extract information of classes found in the code base
 class ClassVisitor : SyntaxVisitor{
     init(info : InformationHandler){
         self.info = info

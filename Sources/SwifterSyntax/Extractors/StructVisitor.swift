@@ -10,6 +10,7 @@ import SwiftSyntax
 import SwiftParser
 import Foundation
 
+///Extract information of structs found in the code base
 final class StructVisitor : SyntaxVisitor{
     init(info : InformationHandler , url : URL? = nil){
         self.info = info

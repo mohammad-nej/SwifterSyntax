@@ -5,6 +5,7 @@
 //  Created by MohammavDev on 5/21/25.
 //
 
+
 public protocol FeildBuildable {
     
   
@@ -15,7 +16,7 @@ public protocol FeildBuildable {
 
 
 
-///Builder capable of creating a Variable for you
+///Builder capable of creating an internal Variable for you
 public struct FieldBuilder : FeildBuildable  {
     
     

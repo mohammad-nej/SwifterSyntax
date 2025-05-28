@@ -5,7 +5,7 @@
 //  Created by MohammavDev on 5/21/25.
 //
 
-///Builder for creating @Environment variables for SwiftUI
+///Builder for creating @Environment private variables for SwiftUI
 public struct EnvironemtVariableBuilder : FeildBuildable{
     var name : String
     var type : ObjectInformation

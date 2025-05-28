@@ -13,14 +13,15 @@ import Foundation
 public enum ParseError: Error{
     case gettingVariableNameFailed , noInitialValue , noMutationModifier,propertyIsComputed, incorrectSourceCode, unSupportedCode
 }
-public struct Helpers{
+///Internal type used for extracting info using SwiftSyntax library
+ struct Helpers{
     
     let info : InformationHandler
-    public init(info: InformationHandler) {
+     init(info: InformationHandler) {
         self.info = info
     }
 }
-public extension Helpers{
+ extension Helpers{
      func getVariableName(from syntax : VariableDeclSyntax ) throws -> String{
         let text = syntax.bindings.first?.pattern.as(IdentifierPatternSyntax.self)?.identifier.text
         guard let text  else {
@@ -237,7 +238,7 @@ public extension Helpers{
             else{ continue}
             return .fromString(type,using: info)
         }
-        
+        info.needRerun = true
        return nil
     }
     private func inferTypeForMultiPartVariable(from string : String , inside object : ObjectInformation?) -> ObjectInformation?{
