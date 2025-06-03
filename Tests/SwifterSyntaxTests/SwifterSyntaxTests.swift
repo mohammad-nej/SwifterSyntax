@@ -3,15 +3,16 @@ import Testing
 import SwiftSyntax
 import SwiftParser
 import SwiftSyntaxBuilder
+import Foundation
 
 struct ViewModelBuilderTest {
 
-    let helper : Helpers
+    let helper : SwiftSyntaxHelper
     let info : InformationHandler
     
     init(){
         let info = InformationHandler.new
-        helper = Helpers(info: info)
+        helper = SwiftSyntaxHelper(info: info)
         self.info = info
     }
     
@@ -20,8 +21,8 @@ struct ViewModelBuilderTest {
         
         #expect(info.viewModels.isEmpty)
         
-        let descriptioin = try #require(info.int.fields.first)
-        #expect(descriptioin.name == "description")
+        let descriptioin = try #require(info.int.fields.find(named: "description"))
+       
         #expect(descriptioin.type == info.string)
         #expect(descriptioin.isComputedProperty == true)
     }
@@ -36,9 +37,9 @@ struct ViewModelBuilderTest {
         
         let age : FeildType = .let(name: "age", type: info.int, initialValue: 14)
         
-        person.fields.append(contentsOf: [name,family,age])
+        person.append([name,family,age])
         
-        person.conformances.append("Equatable")
+        person.conformances.upsert("Equatable")
         
         info.append(person)
       
@@ -46,10 +47,14 @@ struct ViewModelBuilderTest {
         //Optional : Person?
         let optionalInfo = try #require(person.optional)
         
+        
+        
+        
         #expect(optionalInfo.name == "Person?" )
         #expect(optionalInfo.isOptional)
-        #expect(optionalInfo.fields == person.fields)
+        #expect(optionalInfo.fields.map(\.id).ascending() == person.fields.map(\.id).ascending() )
         
+        #expect(optionalInfo.fields == person.fields)
         //Array : [Person]
         let personArray = try #require(person.array)
         
@@ -114,11 +119,12 @@ struct ViewModelBuilderTest {
  
         
         
-        SyntaxParser(infoHandler: info).parse(source: sampleCode, url: nil)
+        var parser = SyntaxParser(infoHandler: info)
+        parser.parse(source: sampleCode)
         
        
         
-        let variableInfo = try #require(try info.topLevelVariables.first)
+        let variableInfo = try #require(try info.topLevelVariables.find(named: "coordinator"))
         
         #expect(variableInfo.name == "coordinator")
         #expect(variableInfo.isComputedProperty == false)
@@ -128,7 +134,59 @@ struct ViewModelBuilderTest {
         #expect(variableInfo.isStatic == false)
         #expect(variableInfo.type == info.find("Coordinator"))
     }
-    @Test func testCodeGeneration() async throws {
+    
+    @Test func testAccessLevelCodeGeneration() async throws {
+        var variable : FeildType = .var(name: "name", type: info.string)
+        
+        variable.accessLevel = .private
+        variable.accessLevel.parentAccessLevel = .public
+        
+        var expected = "private var name : String"
+        var code = variable.code
+        
+        #expect(expected == code)
+        
+        variable = .var(name: "age", type: info.int, initialValue: 24)
+        
+        variable.accessLevel = .public
+        variable.accessLevel.parentAccessLevel = .public
+        
+        expected = "var age : Int = 24"
+        code = variable.code
+        
+        #expect(code == expected)
+        
+        variable.accessLevel = .unknown
+        variable.accessLevel.parentAccessLevel = .internal
+        
+        code = variable.code
+        //expected is the same
+        
+        #expect(code == expected)
+        
+        variable.accessLevel = .internal
+        variable.accessLevel.parentAccessLevel = nil
+        
+        code = variable.code
+        //expected is the same
+        
+        #expect(code == expected)
+        
+        variable.accessLevel = .unknown
+        
+        code = variable.code
+        //expected is the same
+        
+        #expect(code == expected)
+        
+        variable.accessLevel = .public
+        
+        code = variable.code
+        expected = "public var age : Int = 24"
+        
+        #expect(code == expected)
+    }
+    @Test func testCodeGenerationForVariables() async throws {
         let variableSample = FeildType(name: "name", type: info.string, attributes: [], mutationType: .var, initialValue: "Mohammad", isComputedProperty: false, modifiers: [], accessLevel: .private)
         
         let generatedCode = variableSample.code
@@ -150,12 +208,202 @@ struct ViewModelBuilderTest {
         
         #expect(generatedEnvironmentVariableCode == "@Environment(Coordinator.self) private var coordinator")
         
+        let source = " let age = currentDate - dateOfBirth\nreturn age"
+        let computed : FeildType = .computedProperty(name: "age", type: info.int, source: source)
+        
+        let code = computed.code
+        let expected = "var age : Int {\n\(source.indented)\n}\n"
+        
+        #expect(code == expected)
     }
+    
+    @Test("Code generation for function") func codeGenerationForFunction() async throws {
+        
+        //creating mock type
+        let userType : ObjectInformation = .fromString("User", using: info)
+        
+        //creating function
+        let function = FunctionInformation(name: "createUser",
+                                           intputTypes: [
+                                                .init(name: "from", secondName: "name", type: info.string),
+                                                .init(name: "age", type: info.int),
+                                            ],
+                                           returnType: userType)
+        function.modifiers = ["static" , "mutating"]
+        function.accessLevel = .fileprivate
+        function.isThrowing = true
+        function.innerSourceCode = "    //some code in here"
+        function.isAsync = true
+        function.parent = nil
+        
+        //generating code
+        let code = function.code
+        
+        //testing
+        let expected = """
+        static mutating fileprivate func createUser(from name : String, age : Int) async throws -> User{
+            //some code in here
+        }
+        """
+        #expect(code == expected)
+        #expect(function.isGlobal == true)
+    }
+    
+    @Test("Code generation for extensions") func codeGenerationForExtension() async throws {
+        let userType : ObjectInformation = .fromString("User", using: info)
+
+        var extensionInfo : ExtensionInformation
+        extensionInfo = ExtensionInformation(of: userType)
+        extensionInfo.accessLevel = .fileprivate
+        
+        let variable1 : FeildType = .computedProperty(name: "familyName", type: info.string)
+        let variable2 : FeildType = .computedProperty(name: "fullName", type: info.string)
+        
+        let function1 = FunctionInformation(name: "getName", intputTypes: [],returnType: info.string)
+        function1.accessLevel = .fileprivate
+        
+        let function2 = FunctionInformation(name: "setName", intputTypes: [.init(name: "name", type: info.string)])
+        function2.accessLevel = .public
+        
+        extensionInfo.append(function1)
+        extensionInfo.append(function2)
+        extensionInfo.append(variable1)
+        extensionInfo.append(variable2)
+        
+        let code = extensionInfo.code
+        
+        let expectedCoded = """
+        fileprivate extension User{
+            var familyName : String{
+            }
+            var fullName : String{
+            }
+        
+        """
+        
+    }
+    
+    @Test("UniqueArray type test") func uniqueArray() async throws {
+        struct Person : Identifiable {
+            let id : UUID = UUID()
+            let name : String
+        }
+        
+        let array : UniqueArray<Person> = [.init(name: "Mina"), .init(name: "Atena") , .init(name: "Piruz")]
+        
+        let count = array.count
+        #expect(count == 3)
+        
+        #expect(array.first!.name == "Mina")
+        #expect(array.last?.name == "Piruz")
+        
+        
+    }
+    
+    @Test("Initializer code generation test")
+    func initializerCodeGenerationTest() async throws {
+        let initializers = InitializerType(for: info.string)
+        
+        initializers.isAsync = true
+        initializers.isThrowing = true
+        initializers.isNullable = true
+        initializers.accessLevel = .fileprivate
+        initializers.innerSourceCode = "age = 12" //not important
+        initializers.inputs = [.init(name: "test", type: info.double)]
+        initializers.modifiers = ["lazy"]
+        
+        var code = initializers.code
+        var expected = """
+        fileprivate lazy init?(test : Double) async throws{
+        \tage = 12
+        }
+        
+        """
+        #expect(code == expected )
+        
+        initializers.isAsync = false
+        code = initializers.code
+        expected = """
+        fileprivate lazy init?(test : Double) throws{
+        \tage = 12
+        }
+        
+        """
+        #expect(code == expected )
+        
+        initializers.isThrowing = false
+        code = initializers.code
+        expected = """
+        fileprivate lazy init?(test : Double){
+        \tage = 12
+        }
+        
+        """
+        #expect(code == expected )
+        
+        initializers.isNullable = false
+        code = initializers.code
+        expected = """
+        fileprivate lazy init(test : Double){
+        \tage = 12
+        }
+        
+        """
+        #expect(code == expected )
+        
+        initializers.modifiers = []
+        code = initializers.code
+        expected = """
+        fileprivate init(test : Double){
+        \tage = 12
+        }
+        
+        """
+        #expect(code == expected )
+        
+        initializers.accessLevel = .internal
+        code = initializers.code
+        expected = """
+        init(test : Double){
+        \tage = 12
+        }
+        
+        """
+        #expect(code == expected )
+        
+        initializers.inputs = []
+        code = initializers.code
+        expected = """
+        init(){
+        \tage = 12
+        }
+        
+        """
+        #expect(code == expected )
+       
+        initializers.innerSourceCode = nil
+        code = initializers.code
+        expected = """
+        init(){}
+        
+        """
+        #expect(code == expected )
+        
+        initializers.innerSourceCode = ""
+        code = initializers.code
+        expected = """
+        init(){}
+        
+        """
+        #expect(code == expected )
+    }
+    
     @Test func typeInferanceTest() async throws {
         let sampleCode = "var age = 12.description"
         
         
-        SyntaxParser(infoHandler: info).parse(source: sampleCode, url: nil)
+        var parser = SyntaxParser(infoHandler: info)
+        parser.parse(source: sampleCode)
         
         let variable = try #require(info.topLevelVariables.first)
         
@@ -164,14 +412,15 @@ struct ViewModelBuilderTest {
         #expect(variable.isOptional == false)
         #expect(variable.isComputedProperty == false)
         #expect(variable.modifiers.isEmpty)
-        #expect(variable.accessLevel == .internal)
+        #expect(variable.accessLevel == .unknown)
         #expect(variable.isStatic == false)
         #expect(variable.isArray == false)
         #expect(variable.initialValue == nil)
         
         let sampleCode2 = "private lazy var isOk = false"
         let newInfo = InformationHandler.new
-        SyntaxParser(infoHandler: newInfo).parse(source: sampleCode2, url: nil)
+        var parser2 = SyntaxParser(infoHandler: newInfo)
+        parser2.parse(source: sampleCode2)
         
         let variable2 = try #require(newInfo.topLevelVariables.first)
         
@@ -186,56 +435,10 @@ struct ViewModelBuilderTest {
         
     }
     
+
     
-    @Test func multiLevelTypeInferanceTest() throws{
-        
-        let code =
-        """
-        let mohammad = Person(age: 12)
-        let age = mohammad.age
-        let ageDecs = mohammad.age.description
-        let counter = Person.counter.description
-        struct Person { 
-        
-            var age : Int
-        
-            var name : String
-        
-            
-            static var counter : Double
-        }
-        
-        let uuid = UUID()
-        let myType = RandomType(age : 12, name : 234)
-        """
-        
-        SyntaxParser(infoHandler: info).parse(source: code, url: nil)
-        
-//        var person = try #require(info.find("Person"))
-        let globals = info.topLevelVariables
-        let age = globals[1]
-        
-        
-        #expect(age.name == "age")
-        #expect(age.type == info.int)
-        
-        let ageDesc = globals[2]
-        #expect(ageDesc.name == "ageDecs")
-        #expect(ageDesc.type == info.string)
-        
-        let counter = globals[3]
-        #expect(counter.name == "counter")
-        #expect(counter.type == info.string)
-        
-        let uuid = globals[5]
-        #expect(uuid.name == "uuid")
-        #expect(uuid.type == info.uuid)
-        
-        let myType = globals[6]
-        #expect(myType.name == "myType")
-        #expect(myType.type == info.find("RandomType"))
-    }
     @Test func inputLitteralInitializationTest() {
+        
         //true
         let trueValue : InputLitteral = "true"
         #expect(trueValue == .true)

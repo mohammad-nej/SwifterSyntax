@@ -15,7 +15,9 @@ let package = Package(
             targets: ["SwifterSyntax"]),
     
     ],
-    dependencies: [.package(url: "https://github.com/swiftlang/swift-syntax", .upToNextMajor(from: "601.0.1"))],
+    dependencies: [.package(url: "https://github.com/swiftlang/swift-syntax", .upToNextMajor(from: "601.0.1")),
+                   .package(url: "https://github.com/apple/swift-collections.git", .upToNextMajor(from: "1.2.0")),
+                  ],
     targets: [
         // Targets are the basic building blocks of a package, defining a module or a test suite.
         // Targets can depend on other targets in this package and products from dependencies.
@@ -24,7 +26,8 @@ let package = Package(
             ,dependencies: [
                 .product(name: "SwiftSyntax", package: "swift-syntax"),
                 .product(name: "SwiftParser", package: "swift-syntax"),
-                .product(name: "SwiftSyntaxBuilder", package: "swift-syntax")
+                .product(name: "SwiftSyntaxBuilder", package: "swift-syntax"),
+                .product(name: "OrderedCollections", package: "swift-collections"),
                            ]
         ),
         .testTarget(

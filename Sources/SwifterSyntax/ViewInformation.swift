@@ -5,6 +5,8 @@
 //  Created by MohammavDev on 5/20/25.
 //
 
+import OrderedCollections
+
 ///information about a specific SwiftUI view
 public struct ViewInformation{
     
@@ -14,7 +16,7 @@ public struct ViewInformation{
     public let type : ObjectType = .struct
     
     ///all conformances of this view
-    public var conformances : [String]
+    public var conformances : OrderedSet<String>
     
     ///View model for this view
     public var viewModel : ObjectInformation?
@@ -26,7 +28,7 @@ public struct ViewInformation{
     
     ///All @Environment variables
     public lazy var environmentVariables : [FeildType] = {
-        allVariables.filter { $0.isEnvironmentVariable}
+         allVariables.filter { $0.isEnvironmentVariable}
     }()
     
     ///All normal variables like view inputs :
@@ -58,11 +60,11 @@ public struct ViewInformation{
     let accessLevel : AccessLevel
     
     ///all macros and other attributes attached to the view : @MainActor, ...
-    let attributes : [String]
+    let attributes : OrderedSet<String> 
     
     
     ///Mix of all variables in the view including environment variables, static and computed ones
-    public var allVariables : [FeildType] = []
+    public var allVariables : OrderedSet<FeildType> = []
     
     public var hasViewModel : Bool {
         return viewModel != nil

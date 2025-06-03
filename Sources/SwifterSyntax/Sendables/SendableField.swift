@@ -15,13 +15,13 @@ import Foundation
 /////...
 ///let sendableField = variable.sendable
 ///```
-public struct SendableField : Sendable,CodeGeneratable , Identifiable {
+public struct SendableField : Sendable,CodeGeneratable , Identifiable  , Hashable , Equatable{
     
     init(from field : FeildType) {
         self.id = field.id
         self.name = field.name
-        self.attributes = field.attributes
-        self.modifiers = field.modifiers
+        self.attributes = .init(field.attributes)
+        self.modifiers = .init(field.modifiers)
         self.mutationType = field.mutationType
         self.isComputedProperty = field.isComputedProperty
         self.initialValue = field.initialValue
@@ -41,7 +41,7 @@ public struct SendableField : Sendable,CodeGeneratable , Identifiable {
     }
     
     
-    public let id : UUID
+    public let id : UniqueID
     
     ///name of the variable
     public let name : String
@@ -85,3 +85,12 @@ public struct SendableField : Sendable,CodeGeneratable , Identifiable {
     public let isStateVariable : Bool
 }
 
+extension SendableField {
+    public static func == (lhs: SendableField, rhs: SendableField) -> Bool {
+        return lhs.id == rhs.id
+    }
+    
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
+    }
+}

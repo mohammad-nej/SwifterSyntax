@@ -15,15 +15,16 @@ public struct SendableObjectInformation : Identifiable , Sendable{
         }
     }
      init(from object : ObjectInformation){
-        self.conformances = object.conformances
+         self.conformances = object.conformances.map(\.self)
         self.name = object.name
         self.id = object.id
         self.availability = object.availability
-        self.fields = object.fields.map(\.sendable)
+        let feilds = object.fields.map(\.sendable)
+         self.fields = feilds.map(\.self)
         self.sourceFile = object.sourceFile
         self.url = object.url
         self.type = object.type
-         self._sendableObjectInformation = .init(vm: object.viewModel?.sendable)
+        self._sendableObjectInformation = .init(vm: object.viewModel?.sendable)
     }
     ///All Variables of this type
     public let fields : [SendableField]
@@ -41,7 +42,7 @@ public struct SendableObjectInformation : Identifiable , Sendable{
     public let url : URL?
     
     ///Id
-    public let id : UUID
+    public let id : UniqueID
     
     ///Parsed sourceFile of this file
     public let sourceFile : SourceFileSyntax?
